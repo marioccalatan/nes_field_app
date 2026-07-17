@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { API_ENDPOINTS } from "../config/api";
 import { createLocalMaintenanceId, getCachedGisLayersForBbox, getCachedGisLayersForCenter, getDeviceId, getGisLayerCacheStats, listPendingMaintenanceReports, savePendingMaintenanceReport } from "../services/offlineStore";
-import { loadMaintenanceReports, syncPendingMaintenanceReports } from "../services/maintenanceReportsService";
+import { loadMaintenanceReports, syncPendingMaintenanceReports, updateMaintenanceReport } from "../services/maintenanceReportsService";
 
 const INITIAL_FORM = {
   reportType: "",
@@ -549,6 +549,77 @@ function makePayload({ form, user, deviceId, localId, images, endorsedUsers }) {
   return payload;
 }
 
+function normalizeEditStatus(value) {
+  const status = clean(value).toUpperCase();
+  return status === "CLOSED" || status === "CLOSE" ? "CLOSED" : "OPEN";
+}
+
+function parseEditEndorsedTo(value) {
+  if (Array.isArray(value)) return value;
+  const raw = clean(value);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getEditCoordinates(report) {
+  const coordinates = Array.isArray(report?.geometry?.coordinates) ? report.geometry.coordinates : [];
+  return {
+    lon: report?.lon ?? report?.longitude ?? coordinates[0] ?? "",
+    lat: report?.lat ?? report?.latitude ?? coordinates[1] ?? "",
+  };
+}
+
+function makeFormFromReport(report) {
+  const coords = getEditCoordinates(report || {});
+  return {
+    reportType: clean(report?.reportType ?? report?.report_type),
+    reportDesc: clean(report?.reportDesc ?? report?.report_desc),
+    address: clean(report?.address),
+    municipality: clean(report?.municipality),
+    barangay: clean(report?.barangay),
+    feeder: clean(report?.feeder),
+    lon: clean(coords.lon),
+    lat: clean(coords.lat),
+    remarks: clean(report?.remarks),
+    visibleOn: clean(report?.visibleOn ?? report?.visible_on),
+  };
+}
+
+function makeUpdatePayload({ form, report, user, images, endorsedUsers }) {
+  const status = normalizeEditStatus(report?.status);
+  const payload = {
+    event_time: report?.eventTime || report?.event_time || new Date().toISOString(),
+    lon: Number(clean(form.lon)),
+    lat: Number(clean(form.lat)),
+    address: clean(form.address),
+    municipality: clean(form.municipality),
+    barangay: clean(form.barangay),
+    feeder: clean(form.feeder),
+    report_type: clean(form.reportType) || "Others",
+    report_desc: clean(form.reportDesc),
+    remarks: clean(form.remarks),
+    status,
+    label: clean(form.reportDesc) || clean(form.address) || `MO #${report?.id || ""}`,
+    images,
+  };
+  if (status === "CLOSED") {
+    payload.accomplished_date = report?.accomplishedDate || report?.accomplished_date || new Date().toISOString();
+    payload.accomplished_by = report?.accomplishedBy || report?.accomplished_by || user?.fullname || user?.fullName || user?.username || "mobile";
+    payload.accomplishment = report?.accomplishment || "Updated from mobile app.";
+  }
+  if (endorsedUsers.length > 0) {
+    payload.endorsed_to = endorsedUsers;
+    payload.endorsed_by = user?.fullname || user?.fullName || user?.username || "mobile";
+    payload.visible_on = clean(form.visibleOn);
+  }
+  return payload;
+}
+
 async function fetchJson(url, token) {
   const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   const data = await response.json().catch(() => null);
@@ -667,7 +738,7 @@ function PendingItem({ item }) {
   );
 }
 
-export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved }) {
+export default function AddJobScreen({ token, user, editReport, onCancelEdit, onSyncStatusChange, onSaved }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [deviceId, setDeviceId] = useState("");
   const [pendingItems, setPendingItems] = useState([]);
@@ -688,6 +759,7 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
   const canEndorse = isGisAdmin(user);
   const endorsedUsers = useMemo(() => lookups.users.filter((entry) => endorsedIds.includes(entry.id)), [endorsedIds, lookups.users]);
   const canSave = useMemo(() => clean(form.reportDesc) && clean(form.lon) && clean(form.lat) && !saving, [form, saving]);
+  const editing = Boolean(editReport?.id);
 
   const refreshPending = useCallback(async () => {
     const items = await listPendingMaintenanceReports({ includeSynced: true });
@@ -869,6 +941,16 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
     };
   }, [form.municipality, token]);
 
+  useEffect(() => {
+    if (!editReport?.id) return;
+    setForm(makeFormFromReport(editReport));
+    setImages([]);
+    setMessage("");
+    setMessageType("info");
+    const endorsed = parseEditEndorsedTo(editReport.endorsedTo ?? editReport.endorsed_to);
+    setEndorsedIds(endorsed.map((entry) => Number(entry?.id ?? entry?.user_id)).filter((id) => Number.isFinite(id)));
+  }, [editReport]);
+
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value, ...(key === "reportType" ? { reportDesc: "" } : {}), ...(key === "municipality" ? { barangay: "" } : {}) }));
   }
@@ -942,6 +1024,17 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
     setSaving(true);
     setMessage("");
     try {
+      if (editing) {
+        const payload = makeUpdatePayload({ form, report: editReport, user, images, endorsedUsers });
+        const result = await updateMaintenanceReport({ token, id: editReport.id, payload });
+        onSyncStatusChange?.(result.refreshed);
+        onSaved?.(result);
+        setMessageType("success");
+        setMessage(`MO #${editReport.id} updated.`);
+        setImages([]);
+        return;
+      }
+
       const id = deviceId || await getDeviceId();
       const localId = createLocalMaintenanceId(id);
       const payload = makePayload({ form, user, deviceId: id, localId, images, endorsedUsers });
@@ -988,8 +1081,17 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.wrap}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>Add Maintenance Order</Text>
-          <Text style={styles.sectionSub}>MO number is assigned by the server after sync. GPS supplies the location for this phone record.</Text>
+          <View style={styles.formTitleRow}>
+            <View style={styles.formTitleBlock}>
+              <Text style={styles.sectionTitle}>{editing ? `Edit MO #${editReport.id}` : "Add Maintenance Order"}</Text>
+              <Text style={styles.sectionSub}>{editing ? "Update the official maintenance order record." : "MO number is assigned by the server after sync. GPS supplies the location for this phone record."}</Text>
+            </View>
+            {editing ? (
+              <Pressable onPress={onCancelEdit} style={styles.cancelEditButton}>
+                <Text style={styles.cancelEditText}>Cancel</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <View style={styles.locationBox}>
             <View style={styles.locationTextBlock}>
@@ -1061,7 +1163,7 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
           ) : null}
 
           <Pressable onPress={handleSave} disabled={!canSave} style={({ pressed }) => [styles.saveButton, (!canSave || pressed) && styles.buttonPressed]}>
-            {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveButtonText}>Save Maintenance Order</Text>}
+            {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveButtonText}>{editing ? "Update Maintenance Order" : "Save Maintenance Order"}</Text>}
           </Pressable>
         </View>
 
@@ -1092,7 +1194,7 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
           </View>
         </Modal>
 
-        <View style={styles.panel}>
+        {!editing ? <View style={styles.panel}>
           <View style={styles.pendingHeader}>
             <View style={styles.pendingTitleBlock}>
               <Text style={styles.sectionTitle}>Mobile Sync Queue</Text>
@@ -1103,7 +1205,7 @@ export default function AddJobScreen({ token, user, onSyncStatusChange, onSaved 
             </Pressable>
           </View>
           {pendingItems.length === 0 ? <Text style={styles.emptyText}>No local maintenance orders yet.</Text> : pendingItems.map((item) => <PendingItem key={item.localId} item={item} />)}
-        </View>
+        </View> : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1113,6 +1215,10 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#07111f" },
   content: { padding: 14, paddingBottom: 30 },
   panel: { backgroundColor: "#101b2c", borderColor: "#243247", borderWidth: 1, borderRadius: 8, padding: 14, marginBottom: 12 },
+  formTitleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
+  formTitleBlock: { flex: 1, minWidth: 0 },
+  cancelEditButton: { minHeight: 36, justifyContent: "center", borderWidth: 1, borderColor: "#334155", borderRadius: 7, paddingHorizontal: 11, backgroundColor: "#07111f" },
+  cancelEditText: { color: "#7dd3fc", fontSize: 12, fontWeight: "900" },
   sectionTitle: { color: "#f8fafc", fontSize: 17, fontWeight: "900" },
   sectionTitleSmall: { color: "#f8fafc", fontSize: 14, fontWeight: "900" },
   sectionSub: { color: "#94a3b8", fontSize: 12, lineHeight: 18, marginTop: 4, marginBottom: 12 },
@@ -1138,6 +1244,9 @@ const styles = StyleSheet.create({
   optionRowActive: { backgroundColor: "#0f8b4c" },
   optionText: { color: "#cbd5e1", fontSize: 13, fontWeight: "800" },
   optionTextActive: { color: "#ffffff" },
+  optionSubText: { color: "#94a3b8", fontSize: 11, fontWeight: "700", marginTop: 2 },
+  selectedHint: { color: "#7dd3fc", fontSize: 11, lineHeight: 16, marginTop: 6, fontWeight: "800" },
+  emptyPickerText: { color: "#94a3b8", fontSize: 13, padding: 12, fontWeight: "700" },
   locationBox: { borderWidth: 1, borderColor: "#334155", borderRadius: 8, backgroundColor: "#07111f", padding: 12, marginTop: 12, flexDirection: "row", justifyContent: "space-between", gap: 10 },
   locationTextBlock: { flex: 1 },
   locationTitle: { color: "#f8fafc", fontSize: 13, fontWeight: "900" },

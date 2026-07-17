@@ -10,6 +10,7 @@
     ],
     "android": {
       "package": "ph.com.beneco.nesfieldapp",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#0f172a"
       },
@@ -22,7 +23,7 @@
       ]
     },
     "extra": {
-      "apiBaseUrl": "http://10.0.2.2:4000"
+      "apiBaseUrl": "http://116.50.169.136:4000"
     },
     "plugins": [
       "expo-location",

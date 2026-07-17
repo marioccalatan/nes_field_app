@@ -43,6 +43,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [jobsShortcut, setJobsShortcut] = useState(null);
+  const [editingReport, setEditingReport] = useState(null);
   const [syncInfo, setSyncInfo] = useState({ online: true, syncedAt: "" });
 
   useEffect(() => {
@@ -116,6 +117,7 @@ export default function App() {
     setSession(null);
     setActiveTab("overview");
     setJobsShortcut(null);
+    setEditingReport(null);
   }
 
   function handleLogin(nextSession) {
@@ -125,10 +127,23 @@ export default function App() {
 
   function openJobs(shortcut = null) {
     setJobsShortcut(shortcut ? { ...shortcut, token: Date.now() } : { filter: "all", reportType: "", month: "", token: Date.now() });
+    setEditingReport(null);
+    setActiveTab("jobs");
+  }
+
+  function openEditReport(report) {
+    if (!report?.id) return;
+    setEditingReport({ ...report, token: Date.now() });
+    setActiveTab("add");
+  }
+
+  function closeEditReport() {
+    setEditingReport(null);
     setActiveTab("jobs");
   }
 
   function handleTabPress(tabKey) {
+    if (tabKey !== "add") setEditingReport(null);
     if (tabKey === "jobs") {
       setJobsShortcut((prev) => prev || { filter: "all", reportType: "", month: "", token: Date.now() });
     }
@@ -137,9 +152,9 @@ export default function App() {
 
   function renderActiveScreen() {
     if (activeTab === "overview") return <OverviewScreen token={session?.token} onOpenJobs={openJobs} onSyncStatusChange={handleSyncResult} />;
-    if (activeTab === "jobs") return <JobsScreen token={session?.token} user={session?.user} shortcut={jobsShortcut} onSyncStatusChange={handleSyncResult} />;
-    if (activeTab === "add") return <AddJobScreen token={session?.token} user={session?.user} onSyncStatusChange={handleSyncResult} onSaved={() => syncMaintenanceReports({ silent: true })} />;
-    if (activeTab === "map") return <MapScreen token={session?.token} onSyncStatusChange={handleSyncResult} />;
+    if (activeTab === "jobs") return <JobsScreen token={session?.token} user={session?.user} shortcut={jobsShortcut} onOpenJob={openEditReport} onSyncStatusChange={handleSyncResult} />;
+    if (activeTab === "add") return <AddJobScreen token={session?.token} user={session?.user} editReport={editingReport} onCancelEdit={closeEditReport} onSyncStatusChange={handleSyncResult} onSaved={() => syncMaintenanceReports({ silent: true })} />;
+    if (activeTab === "map") return <MapScreen token={session?.token} onOpenMaintenanceReport={openEditReport} onSyncStatusChange={handleSyncResult} />;
     return <PlaceholderScreen title="More" caption="Profile, settings, sync, and logout actions." />;
   }
 
@@ -173,7 +188,7 @@ export default function App() {
           <Text style={styles.userName} numberOfLines={1}>{session.user?.fullname || session.user?.username || "User"}</Text>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, syncInfo.online ? styles.statusDotOnline : styles.statusDotOffline]} />
-            <Text style={[styles.statusText, syncInfo.online ? styles.statusTextOnline : styles.statusTextOffline]}>{syncInfo.online ? "Online" : "Offline"}</Text>
+            <Text style={[styles.statusText, syncInfo.online ? styles.statusTextOnline : styles.statusTextOffline]}>{syncInfo.online ? "API Online" : "API Offline"}</Text>
           </View>
           <Text style={styles.syncedText} numberOfLines={1}>Synced {formatSyncTime(syncInfo.syncedAt)}</Text>
           <Pressable onPress={handleLogout} hitSlop={8}>

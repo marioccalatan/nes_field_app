@@ -94,6 +94,24 @@ export async function loadMaintenanceReports({ token, preferCache = false } = {}
   }
 }
 
+export async function updateMaintenanceReport({ token, id, payload }) {
+  const reportId = Number(id);
+  if (!Number.isFinite(reportId) || reportId <= 0) {
+    throw new Error("Invalid maintenance order number.");
+  }
+  const response = await fetch(`${API_ENDPOINTS.maintenanceReports}/${reportId}`, {
+    method: "PUT",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: toFormData(payload || {}),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.message || "Failed to update maintenance order.");
+  }
+  const refreshed = await loadMaintenanceReports({ token });
+  return { ...data, refreshed };
+}
+
 export async function syncPendingMaintenanceReports({ token } = {}) {
   const pending = await listPendingMaintenanceReports();
   if (pending.length === 0) return { online: true, synced: 0, failed: 0 };

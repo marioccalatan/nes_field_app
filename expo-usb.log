@@ -227,3 +227,19 @@ Android Bundled 110ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry
 Android Bundled 44ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
 Android Bundled 139ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
 Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 153ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 123ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+Android Bundled 352ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 717ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 43ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Error: ENOENT: no such file or directory, watch 'D:\react-projects\nes_field_app\android\.gradle\8.8\dependencies-accessors\423f0288fa7dffe069445ffa4b72952b4629a15a-f31a7354-e5be-438e-84b7-7e56ccdae060\classes'
+    at FSWatcher.<computed> (node:internal/fs/watchers:254:19)
+    at Object.watch (node:fs:2551:36)
+    at NodeWatcher._watchdir (D:\react-projects\nes_field_app\node_modules\metro-file-map\src\watchers\NodeWatcher.js:89:24)
+    at D:\react-projects\nes_field_app\node_modules\metro-file-map\src\watchers\NodeWatcher.js:185:22
+    at Walker.<anonymous> (D:\react-projects\nes_field_app\node_modules\metro-file-map\src\watchers\common.js:81:31)
+    at Walker.emit (node:events:508:28)
+    at D:\react-projects\nes_field_app\node_modules\walker\lib\walker.js:69:16
+    at FSReqCallback.oncomplete (node:fs:184:23)

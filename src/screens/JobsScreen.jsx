@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { loadMaintenanceReports } from "../services/maintenanceReportsService";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, Modal, PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { loadMaintenanceReports, updateMaintenanceReport } from "../services/maintenanceReportsService";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -79,6 +79,10 @@ function getFeatureRows(payload) {
       group1: props.group1 || "",
       label: props.label || "",
       remarks: props.remarks || "",
+      accomplishedDate: props.accomplished_date || props.accomplishedDate || "",
+      accomplishedBy: props.accomplished_by || props.accomplishedBy || "",
+      accomplishment: props.accomplishment || "",
+      visibleOn: props.visible_on || props.visibleOn || "",
       endorsedTo: parseEndorsedTo(props.endorsed_to || props.endorsedTo),
       lon: Number(coordinates[0] ?? props.lon),
       lat: Number(coordinates[1] ?? props.lat),
@@ -135,38 +139,118 @@ function statusStyle(status) {
   return { box: styles.statusOpen, text: styles.statusOpenText, label: "OPEN" };
 }
 
-function JobCard({ job }) {
+function makeClosePayload(job, user) {
+  return {
+    event_time: job.eventTime || new Date().toISOString(),
+    lon: Number(job.lon),
+    lat: Number(job.lat),
+    address: job.address || "",
+    municipality: job.municipality || "",
+    barangay: job.barangay || "",
+    feeder: job.feeder || "",
+    report_type: job.reportType || "Others",
+    report_desc: job.reportDesc || "",
+    remarks: job.remarks || "",
+    label: job.label || job.reportDesc || "",
+    status: "CLOSED",
+    accomplished_date: new Date().toISOString(),
+    accomplished_by: user?.fullname || user?.fullName || user?.username || "mobile",
+    accomplishment: "Closed from mobile app.",
+  };
+}
+
+function JobCard({ job, user, onOpen, onCloseRequest }) {
   const status = statusStyle(job.status);
   const location = [job.barangay, job.municipality].filter(Boolean).join(", ");
   const meta = [job.feeder ? `Feeder ${job.feeder}` : "", job.group1].filter(Boolean).join("  -  ");
+  const swipedRef = useRef(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => {
+      if (isCompletedStatus(job.status)) return false;
+      return gesture.dx > 8 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.1;
+    },
+    onPanResponderGrant: () => {
+      translateX.stopAnimation();
+    },
+    onPanResponderMove: (_event, gesture) => {
+      if (gesture.dx <= 0) {
+        translateX.setValue(0);
+        return;
+      }
+      translateX.setValue(Math.min(gesture.dx, 118));
+    },
+    onPanResponderRelease: (_event, gesture) => {
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 10,
+      }).start();
+      if (gesture.dx > 72 && Math.abs(gesture.dy) < 60) {
+        swipedRef.current = true;
+        onCloseRequest?.(job);
+        setTimeout(() => {
+          swipedRef.current = false;
+        }, 450);
+      }
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 10,
+      }).start();
+      setTimeout(() => {
+        swipedRef.current = false;
+      }, 150);
+    },
+  })).current;
 
   return (
-    <View style={styles.jobCard}>
-      <View style={styles.jobTopRow}>
-        <Text style={styles.jobId}>#{job.id || "-"}</Text>
-        <View style={[styles.statusPill, status.box]}>
-          <Text style={[styles.statusText, status.text]}>{status.label}</Text>
-        </View>
-      </View>
-      <Text style={styles.jobType}>{job.reportType}</Text>
-      <Text style={styles.jobDesc} numberOfLines={2}>{job.reportDesc || job.label || "No description"}</Text>
-      <Text style={styles.jobDate}>{formatDateTime(job.eventTime)}</Text>
-      {location ? <Text style={styles.jobLocation}>{location}</Text> : null}
-      {job.address ? <Text style={styles.jobAddress} numberOfLines={2}>{job.address}</Text> : null}
-      {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
-      {job.endorsedTo.length > 0 ? (
-        <View style={styles.endorsedWrap}>
-          <Text style={styles.endorsedLabel}>Endorsed to</Text>
-          <Text style={styles.endorsedNames} numberOfLines={2}>
-            {job.endorsedTo.map((entry) => entry.alias ? `${entry.fullname || entry.username} (${entry.alias})` : entry.fullname || entry.username).filter(Boolean).join(", ")}
-          </Text>
+    <View style={styles.swipeShell}>
+      {!isCompletedStatus(job.status) ? (
+        <View style={styles.closeActionPane}>
+          <Text style={styles.closeActionText}>Close</Text>
         </View>
       ) : null}
+      <Animated.View {...panResponder.panHandlers} style={{ transform: [{ translateX }] }}>
+        <Pressable
+          onPress={() => {
+            if (!swipedRef.current) onOpen?.(job);
+          }}
+          style={({ pressed }) => [styles.jobCard, pressed && styles.jobCardPressed]}
+        >
+          <View style={styles.jobTopRow}>
+            <Text style={styles.jobId}>#{job.id || "-"}</Text>
+            <View style={[styles.statusPill, status.box]}>
+              <Text style={[styles.statusText, status.text]}>{status.label}</Text>
+            </View>
+          </View>
+          <Text style={styles.jobType}>{job.reportType}</Text>
+          <Text style={styles.jobDesc} numberOfLines={2}>{job.reportDesc || job.label || "No description"}</Text>
+          <Text style={styles.jobDate}>{formatDateTime(job.eventTime)}</Text>
+          {location ? <Text style={styles.jobLocation}>{location}</Text> : null}
+          {job.address ? <Text style={styles.jobAddress} numberOfLines={2}>{job.address}</Text> : null}
+          {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
+          {job.endorsedTo.length > 0 ? (
+            <View style={styles.endorsedWrap}>
+              <Text style={styles.endorsedLabel}>Endorsed to</Text>
+              <Text style={styles.endorsedNames} numberOfLines={2}>
+                {job.endorsedTo.map((entry) => entry.alias ? `${entry.fullname || entry.username} (${entry.alias})` : entry.fullname || entry.username).filter(Boolean).join(", ")}
+              </Text>
+            </View>
+          ) : null}
+          {!isCompletedStatus(job.status) ? <Text style={styles.swipeHint}>Swipe right to close</Text> : null}
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
 
-export default function JobsScreen({ token, user, shortcut, onSyncStatusChange }) {
+export default function JobsScreen({ token, user, shortcut, onOpenJob, onSyncStatusChange }) {
   const [activeFilter, setActiveFilter] = useState("all");
   const [reportTypeFilter, setReportTypeFilter] = useState(ALL_REPORT_TYPES);
   const [searchQuery, setSearchQuery] = useState("");
@@ -271,6 +355,35 @@ export default function JobsScreen({ token, user, shortcut, onSyncStatusChange }
   function selectReportType(value) {
     setReportTypeFilter(value);
     setDropdownOpen(false);
+  }
+
+  function confirmCloseJob(job) {
+    if (isCompletedStatus(job.status)) return;
+    Alert.alert(
+      "Close Maintenance Order",
+      `Set MO #${job.id} to CLOSED?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Close MO",
+          style: "destructive",
+          onPress: async () => {
+            setRefreshing(true);
+            setError("");
+            try {
+              const result = await updateMaintenanceReport({ token, id: job.id, payload: makeClosePayload(job, user) });
+              onSyncStatusChange?.(result.refreshed);
+              setJobs(getFeatureRows(result.refreshed.payload));
+            } catch (err) {
+              onSyncStatusChange?.({ online: false });
+              setError(err?.message || "Unable to close maintenance order.");
+            } finally {
+              setRefreshing(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   const activeFilterLabel = FILTERS.find((filter) => filter.key === activeFilter)?.label || "All";
@@ -378,7 +491,7 @@ export default function JobsScreen({ token, user, shortcut, onSyncStatusChange }
           </View>
         ) : null}
 
-        {pagedJobs.map((job) => <JobCard key={String(job.id)} job={job} />)}
+        {pagedJobs.map((job) => <JobCard key={String(job.id)} job={job} user={user} onOpen={onOpenJob} onCloseRequest={confirmCloseJob} />)}
 
         {!loading && !error && filteredJobs.length > PAGE_SIZE ? (
           <View style={styles.paginationRow}>
@@ -463,7 +576,11 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: "center", justifyContent: "center", backgroundColor: "#101b2c", borderWidth: 1, borderColor: "#243247", borderRadius: 8, padding: 22 },
   emptyTitle: { color: "#f8fafc", fontSize: 16, fontWeight: "900" },
   emptyText: { color: "#94a3b8", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 4 },
-  jobCard: { backgroundColor: "#101b2c", borderColor: "#243247", borderWidth: 1, borderRadius: 8, padding: 14, marginBottom: 10 },
+  swipeShell: { marginBottom: 10, borderRadius: 8, overflow: "hidden", backgroundColor: "#33151b" },
+  closeActionPane: { position: "absolute", left: 0, top: 0, bottom: 0, width: 118, alignItems: "center", justifyContent: "center", backgroundColor: "#7f1d1d" },
+  closeActionText: { color: "#fee2e2", fontSize: 13, fontWeight: "900", textTransform: "uppercase" },
+  jobCard: { backgroundColor: "#101b2c", borderColor: "#243247", borderWidth: 1, borderRadius: 8, padding: 14 },
+  jobCardPressed: { borderColor: "#38bdf8", backgroundColor: "#132238" },
   jobTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   jobId: { color: "#7dd3fc", fontSize: 12, fontWeight: "900" },
   statusPill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 },
@@ -481,6 +598,7 @@ const styles = StyleSheet.create({
   endorsedWrap: { borderTopWidth: 1, borderTopColor: "#243247", marginTop: 10, paddingTop: 9 },
   endorsedLabel: { color: "#94a3b8", fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
   endorsedNames: { color: "#dbeafe", fontSize: 12, lineHeight: 17, marginTop: 3, fontWeight: "700" },
+  swipeHint: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", marginTop: 9 },
   paginationRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 6, paddingTop: 8 },
   pageButton: { minHeight: 40, minWidth: 78, alignItems: "center", justifyContent: "center", borderRadius: 7, borderWidth: 1, borderColor: "#334155", backgroundColor: "#0b1424" },
   pageButtonDisabled: { opacity: 0.45 },
