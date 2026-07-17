@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "NES Field App",
+    "slug": "nes-field-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "ph.com.beneco.nesfieldapp",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "extra": {
+      "apiBaseUrl": "http://10.0.2.2:4000"
+    },
+    "plugins": [
+      "expo-location",
+      "expo-image-picker"
+    ]
+  }
+}

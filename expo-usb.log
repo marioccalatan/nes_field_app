@@ -1,0 +1,229 @@
+Starting project at D:\react-projects\nes_field_app
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+› Opening exp://127.0.0.1:8082 on SM_S938B
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+transform[stderr]: (node:22520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:15992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:19276) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+Android Bundled 12686ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (679 modules)
+Android Bundled 10183ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (684 modules)
+error: SyntaxError: D:\react-projects\nes_field_app\src\screens\JobsScreen.jsx: Missing semicolon. (12:31)
+
+  10 | ];
+  11 |
+> 12 | const ALL_REPORT_TYPES = "";`r`nconst PAGE_SIZE = 10;
+     |                                ^
+  13 |
+  14 | function normalizeStatus(value) {
+  15 |   return String(value || "").trim().toUpperCase();
+ ERROR  [Error: TransformError SyntaxError: D:\react-projects\nes_field_app\src\screens\JobsScreen.jsx: Missing semicolon. (12:31)
+
+  10 | ];
+  11 |
+> 12 | const ALL_REPORT_TYPES = "";`r`nconst PAGE_SIZE = 10;
+     |                                ^
+  13 |
+  14 | function normalizeStatus(value) {
+  15 |   return String(value || "").trim().toUpperCase();]
+Android Bundled 645ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+ ERROR  ReferenceError: Property 'pagedReportTypeStats' doesn't exist
+
+This error is located at:
+    in OverviewScreen (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in App (created by withDevTools(App))
+    in withDevTools(App)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in main(RootComponent), js engine: hermes
+Android Bundled 126ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+ ERROR  ReferenceError: Property 'totalPages' doesn't exist
+
+This error is located at:
+    in JobsScreen (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in App (created by withDevTools(App))
+    in withDevTools(App)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in main(RootComponent), js engine: hermes
+ ERROR  ReferenceError: Property 'totalPages' doesn't exist
+
+This error is located at:
+    in JobsScreen (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in App (created by withDevTools(App))
+    in withDevTools(App)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in main(RootComponent), js engine: hermes
+Android Bundled 221ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 40ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 116ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 46ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 330ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+ ERROR  ReferenceError: Property 'openMapPicker' doesn't exist
+
+This error is located at:
+    in AddJobScreen (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in App (created by withDevTools(App))
+    in withDevTools(App)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in main(RootComponent), js engine: hermes
+ ERROR  ReferenceError: Property 'openMapPicker' doesn't exist
+
+This error is located at:
+    in AddJobScreen (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in RCTView (created by View)
+    in View (created by App)
+    in App (created by withDevTools(App))
+    in withDevTools(App)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in main(RootComponent), js engine: hermes
+Android Bundled 634ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 396ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 360ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 601ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 38ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 589ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 411ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundling failed 12ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+error: SyntaxError: D:\react-projects\nes_field_app\src\screens\AddJobScreen.jsx: Missing semicolon. (71:18)
+
+  69 |       view: new ol.View({
+  70 |         center: ol.proj.fromLonLat([initialLon, initialLat]),
+> 71 |         zoom: 21,`n        maxZoom: 21
+     |                   ^
+  72 |       }),
+  73 |       controls: ol.control.defaults.defaults({ rotate: false })
+  74 |     });
+error: SyntaxError: D:\react-projects\nes_field_app\src\screens\AddJobScreen.jsx: Missing semicolon. (71:18)
+
+  69 |       view: new ol.View({
+  70 |         center: ol.proj.fromLonLat([initialLon, initialLat]),
+> 71 |         zoom: 21,`n        maxZoom: 21
+     |                   ^
+  72 |       }),
+  73 |       controls: ol.control.defaults.defaults({ rotate: false })
+  74 |     });
+ ERROR  [Error: TransformError SyntaxError: D:\react-projects\nes_field_app\src\screens\AddJobScreen.jsx: Missing semicolon. (71:18)
+
+  69 |       view: new ol.View({
+  70 |         center: ol.proj.fromLonLat([initialLon, initialLat]),
+> 71 |         zoom: 21,`n        maxZoom: 21
+     |                   ^
+  72 |       }),
+  73 |       controls: ol.control.defaults.defaults({ rotate: false })
+  74 |     });]
+Android Bundled 701ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 415ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 675ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 663ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 444ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 422ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 379ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+error: SyntaxError: D:\react-projects\nes_field_app\src\services\offlineStore.js: Missing semicolon. (4:63)
+
+  2 |
+  3 | const DATABASE_NAME = "nes_field_app.db";
+> 4 | const CACHE_KEY_MAINTENANCE_REPORTS = "maintenance_reports";`r`nconst CACHE_KEY_GIS_LAYERS = "gis_layers";
+    |                                                                ^
+  5 | const DEVICE_ID_KEY = "device_id";
+  6 |
+  7 | let dbPromise;
+ ERROR  [Error: TransformError SyntaxError: D:\react-projects\nes_field_app\src\services\offlineStore.js: Missing semicolon. (4:63)
+
+  2 |
+  3 | const DATABASE_NAME = "nes_field_app.db";
+> 4 | const CACHE_KEY_MAINTENANCE_REPORTS = "maintenance_reports";`r`nconst CACHE_KEY_GIS_LAYERS = "gis_layers";
+    |                                                                ^
+  5 | const DEVICE_ID_KEY = "device_id";
+  6 |
+  7 | let dbPromise;]
+Android Bundled 455ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 436ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 410ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 407ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 511ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 338ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 465ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 476ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 332ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 37ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 397ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 509ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 40ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 404ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 791ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 42ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 132ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 43ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 465ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 439ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 414ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 36ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 431ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 37ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 412ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 410ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 48ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 476ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 39ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 240ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 40ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 42ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 111ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 37ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 110ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 44ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 139ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
+Android Bundled 41ms D:\react-projects\nes_field_app\node_modules\expo\AppEntry.js (1 module)
