@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../config/api";
+import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 import {
   getCachedMaintenanceReports,
   listPendingMaintenanceReports,
@@ -110,6 +110,29 @@ export async function updateMaintenanceReport({ token, id, payload }) {
   }
   const refreshed = await loadMaintenanceReports({ token });
   return { ...data, refreshed };
+}
+
+function makeAbsoluteUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${API_BASE_URL}${raw.startsWith("/") ? raw : `/${raw}`}`;
+}
+
+export async function loadMaintenanceReportFiles({ token, id }) {
+  const reportId = Number(id);
+  if (!Number.isFinite(reportId) || reportId <= 0) return [];
+  const response = await fetch(API_ENDPOINTS.maintenanceReportFiles(reportId), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.message || "Failed to load maintenance order images.");
+  }
+  return (Array.isArray(data.files) ? data.files : []).map((file) => ({
+    ...file,
+    url: makeAbsoluteUrl(file.url || file.filePath),
+  })).filter((file) => file.url);
 }
 
 export async function syncPendingMaintenanceReports({ token } = {}) {

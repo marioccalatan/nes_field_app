@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
   health: `${API_BASE_URL}/api/health`,
   maintenanceReports: `${API_BASE_URL}/api/gis/maintenance-reports`,
   mobileLocations: `${API_BASE_URL}/api/gis/mobile-locations`,
+  maintenanceReportFiles: (id) => `${API_BASE_URL}/api/gis/maintenance-reports/${encodeURIComponent(String(id))}/files`,
   maintenanceReportTypes: `${API_BASE_URL}/api/gis/maintenance-reports/lookups/report-types`,
   maintenanceReportDescriptions: `${API_BASE_URL}/api/gis/maintenance-reports/lookups/report-descriptions`,
   maintenanceEndorsementUsers: `${API_BASE_URL}/api/gis/maintenance-reports/lookups/endorsement-users`,

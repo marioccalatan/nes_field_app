@@ -44,6 +44,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("overview");
   const [jobsShortcut, setJobsShortcut] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
+  const [editReturnTab, setEditReturnTab] = useState("jobs");
+  const [mapMounted, setMapMounted] = useState(false);
   const [syncInfo, setSyncInfo] = useState({ online: true, syncedAt: "" });
 
   useEffect(() => {
@@ -118,6 +120,8 @@ export default function App() {
     setActiveTab("overview");
     setJobsShortcut(null);
     setEditingReport(null);
+    setEditReturnTab("jobs");
+    setMapMounted(false);
   }
 
   function handleLogin(nextSession) {
@@ -133,17 +137,19 @@ export default function App() {
 
   function openEditReport(report) {
     if (!report?.id) return;
+    setEditReturnTab(activeTab === "map" ? "map" : "jobs");
     setEditingReport({ ...report, token: Date.now() });
     setActiveTab("add");
   }
 
   function closeEditReport() {
     setEditingReport(null);
-    setActiveTab("jobs");
+    setActiveTab(editReturnTab === "map" ? "map" : "jobs");
   }
 
   function handleTabPress(tabKey) {
     if (tabKey !== "add") setEditingReport(null);
+    if (tabKey === "map") setMapMounted(true);
     if (tabKey === "jobs") {
       setJobsShortcut((prev) => prev || { filter: "all", reportType: "", month: "", token: Date.now() });
     }
@@ -154,7 +160,6 @@ export default function App() {
     if (activeTab === "overview") return <OverviewScreen token={session?.token} onOpenJobs={openJobs} onSyncStatusChange={handleSyncResult} />;
     if (activeTab === "jobs") return <JobsScreen token={session?.token} user={session?.user} shortcut={jobsShortcut} onOpenJob={openEditReport} onSyncStatusChange={handleSyncResult} />;
     if (activeTab === "add") return <AddJobScreen token={session?.token} user={session?.user} editReport={editingReport} onCancelEdit={closeEditReport} onSyncStatusChange={handleSyncResult} onSaved={() => syncMaintenanceReports({ silent: true })} />;
-    if (activeTab === "map") return <MapScreen token={session?.token} onOpenMaintenanceReport={openEditReport} onSyncStatusChange={handleSyncResult} />;
     return <PlaceholderScreen title="More" caption="Profile, settings, sync, and logout actions." />;
   }
 
@@ -197,7 +202,14 @@ export default function App() {
         </View>
       </View>
 
-      <View style={styles.content}>{renderActiveScreen()}</View>
+      <View style={styles.content}>
+        {activeTab !== "map" ? renderActiveScreen() : null}
+        {mapMounted || activeTab === "map" ? (
+          <View pointerEvents={activeTab === "map" ? "auto" : "none"} style={[styles.mapPane, activeTab !== "map" && styles.hiddenMapPane]}>
+            <MapScreen token={session?.token} onOpenMaintenanceReport={openEditReport} onSyncStatusChange={handleSyncResult} />
+          </View>
+        ) : null}
+      </View>
 
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
@@ -246,7 +258,9 @@ const styles = StyleSheet.create({
   statusTextOffline: { color: "#fbbf24" },
   syncedText: { color: "#94a3b8", fontSize: 10, fontWeight: "700", marginTop: 2 },
   logoutText: { color: "#7dd3fc", fontSize: 12, fontWeight: "900", marginTop: 4 },
-  content: { flex: 1 },
+  content: { flex: 1, position: "relative" },
+  mapPane: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
+  hiddenMapPane: { opacity: 0 },
   tabBar: {
     flexDirection: "row",
     alignItems: "center",

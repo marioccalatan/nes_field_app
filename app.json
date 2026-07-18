@@ -5,13 +5,16 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./nesfieldapp.png",
     "assetBundlePatterns": [
       "**/*"
     ],
     "android": {
       "package": "ph.com.beneco.nesfieldapp",
       "usesCleartextTraffic": true,
+      "icon": "./nesfieldapp.png",
       "adaptiveIcon": {
+        "foregroundImage": "./nesfieldapp.png",
         "backgroundColor": "#0f172a"
       },
       "permissions": [

@@ -2,10 +2,10 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { WebView } from "react-native-webview";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { API_ENDPOINTS } from "../config/api";
 import { createLocalMaintenanceId, getCachedGisLayersForBbox, getCachedGisLayersForCenter, getDeviceId, getGisLayerCacheStats, listPendingMaintenanceReports, savePendingMaintenanceReport } from "../services/offlineStore";
-import { loadMaintenanceReports, syncPendingMaintenanceReports, updateMaintenanceReport } from "../services/maintenanceReportsService";
+import { loadMaintenanceReportFiles, loadMaintenanceReports, syncPendingMaintenanceReports, updateMaintenanceReport } from "../services/maintenanceReportsService";
 
 const INITIAL_FORM = {
   reportType: "",
@@ -97,6 +97,18 @@ function normalizeGisLayerPayload(payload) {
 
 function safeScriptJson(value) {
   return JSON.stringify(value || {}).replace(/</g, "\\u003c");
+}
+
+function buildImageViewerHtml(file) {
+  const imageUrl = safeScriptJson(file?.url || "");
+  const title = safeScriptJson(file?.fileName || "Maintenance order image");
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=8, user-scalable=yes" /><style>
+    html, body { width:100%; height:100%; margin:0; padding:0; background:#020617; color:#e2e8f0; font-family:Arial,sans-serif; }
+    .bar { position:fixed; left:0; right:0; top:0; z-index:2; min-height:44px; display:flex; align-items:center; padding:8px 12px; background:rgba(2,6,23,.82); box-sizing:border-box; }
+    .title { font-size:13px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .stage { min-height:100%; display:flex; align-items:center; justify-content:center; padding:58px 10px 18px; box-sizing:border-box; }
+    img { max-width:100%; height:auto; object-fit:contain; }
+  </style></head><body><div class="bar"><div class="title">${title}</div></div><div class="stage"><img src=${imageUrl} /></div></body></html>`;
 }
 function visitCoordinates(coordinates, visitor) {
   if (!Array.isArray(coordinates)) return;
@@ -507,9 +519,12 @@ function uniq(values) {
 
 function isGisAdmin(user) {
   return Array.isArray(user?.appAccess) && user.appAccess.some((entry) => {
-    const appCode = clean(entry?.appCode || entry?.app_code).toLowerCase();
-    const accessLevel = clean(entry?.accessLevel || entry?.access_level).toLowerCase();
-    return appCode === "gis" && accessLevel === "admin";
+    const appCode = clean(entry?.appCode || entry?.app_code || entry?.app || entry?.code).toLowerCase().replace(/[\s_]+/g, "-");
+    const appName = clean(entry?.appName || entry?.app_name || entry?.name).toLowerCase().replace(/[\s_]+/g, "-");
+    const accessLevel = clean(entry?.accessLevel || entry?.access_level || entry?.access || entry?.level || entry?.role).toLowerCase().replace(/[\s_]+/g, "-");
+    const isGisApp = appCode === "gis" || appCode === "gis-app" || appName === "gis" || appName.includes("gis");
+    const isAdminAccess = accessLevel === "admin" || accessLevel === "gis-admin";
+    return entry?.isActive !== false && entry?.is_active !== false && isGisApp && isAdminAccess;
   });
 }
 
@@ -746,6 +761,9 @@ export default function AddJobScreen({ token, user, editReport, onCancelEdit, on
   const [gisLayers, setGisLayers] = useState(() => normalizeGisLayerPayload(null));
   const [gisLayerStats, setGisLayerStats] = useState({});
   const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [loadingExistingImages, setLoadingExistingImages] = useState(false);
+  const [selectedExistingImage, setSelectedExistingImage] = useState(null);
   const [endorsedIds, setEndorsedIds] = useState([]);
   const [locating, setLocating] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
@@ -945,11 +963,36 @@ export default function AddJobScreen({ token, user, editReport, onCancelEdit, on
     if (!editReport?.id) return;
     setForm(makeFormFromReport(editReport));
     setImages([]);
+    setExistingImages([]);
+    setSelectedExistingImage(null);
     setMessage("");
     setMessageType("info");
     const endorsed = parseEditEndorsedTo(editReport.endorsedTo ?? editReport.endorsed_to);
     setEndorsedIds(endorsed.map((entry) => Number(entry?.id ?? entry?.user_id)).filter((id) => Number.isFinite(id)));
   }, [editReport]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadExistingImages() {
+      if (!editReport?.id) {
+        setExistingImages([]);
+        return;
+      }
+      setLoadingExistingImages(true);
+      try {
+        const files = await loadMaintenanceReportFiles({ token, id: editReport.id });
+        if (!cancelled) setExistingImages(files);
+      } catch {
+        if (!cancelled) setExistingImages([]);
+      } finally {
+        if (!cancelled) setLoadingExistingImages(false);
+      }
+    }
+    loadExistingImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [editReport?.id, token]);
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value, ...(key === "reportType" ? { reportDesc: "" } : {}), ...(key === "municipality" ? { barangay: "" } : {}) }));
@@ -1032,6 +1075,8 @@ export default function AddJobScreen({ token, user, editReport, onCancelEdit, on
         setMessageType("success");
         setMessage(`MO #${editReport.id} updated.`);
         setImages([]);
+        const files = await loadMaintenanceReportFiles({ token, id: editReport.id }).catch(() => []);
+        setExistingImages(files);
         return;
       }
 
@@ -1146,6 +1191,28 @@ export default function AddJobScreen({ token, user, editReport, onCancelEdit, on
             <View style={styles.imageList}>{images.map((image, index) => <Text key={`${image.uri}-${index}`} style={styles.imageName} numberOfLines={1}>{image.fileName}</Text>)}</View>
           ) : null}
 
+          {editing ? (
+            <View style={styles.existingImagesBox}>
+              <View style={styles.existingImagesHeader}>
+                <Text style={styles.sectionTitleSmall}>Related Images</Text>
+                {loadingExistingImages ? <ActivityIndicator color="#38bdf8" size="small" /> : null}
+              </View>
+              {!loadingExistingImages && existingImages.length === 0 ? (
+                <Text style={styles.emptyText}>No related images found.</Text>
+              ) : null}
+              {existingImages.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailRow}>
+                  {existingImages.map((file) => (
+                    <Pressable key={String(file.id || file.url)} onPress={() => setSelectedExistingImage(file)} style={styles.thumbnailCard}>
+                      <Image source={{ uri: file.url }} style={styles.thumbnailImage} resizeMode="cover" />
+                      <Text style={styles.thumbnailName} numberOfLines={1}>{file.fileName || "Image"}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : null}
+            </View>
+          ) : null}
+
           {canEndorse ? (
             <View style={styles.endorseBox}>
               <Text style={styles.sectionTitleSmall}>Endorsement</Text>
@@ -1190,6 +1257,27 @@ export default function AddJobScreen({ token, user, editReport, onCancelEdit, on
                   onMessage={handleMapMessage}
                 />
               </View>
+            ) : null}
+          </View>
+        </Modal>
+
+        <Modal visible={Boolean(selectedExistingImage)} animationType="fade" onRequestClose={() => setSelectedExistingImage(null)}>
+          <View style={styles.viewerScreen}>
+            <View style={styles.viewerHeader}>
+              <Text style={styles.viewerTitle} numberOfLines={1}>{selectedExistingImage?.fileName || "MO Image"}</Text>
+              <Pressable onPress={() => setSelectedExistingImage(null)} style={styles.viewerCloseButton}>
+                <Text style={styles.viewerCloseText}>Close</Text>
+              </Pressable>
+            </View>
+            {selectedExistingImage ? (
+              <WebView
+                originWhitelist={["*"]}
+                source={{ html: buildImageViewerHtml(selectedExistingImage) }}
+                style={styles.viewerWebView}
+                javaScriptEnabled
+                domStorageEnabled
+                scalesPageToFit
+              />
             ) : null}
           </View>
         </Modal>
@@ -1271,6 +1359,18 @@ const styles = StyleSheet.create({
   attachHint: { color: "#94a3b8", fontSize: 12, marginTop: 3 },
   imageList: { gap: 5, marginTop: 8 },
   imageName: { color: "#cbd5e1", fontSize: 12, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 6, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#243247" },
+  existingImagesBox: { borderTopWidth: 1, borderTopColor: "#243247", marginTop: 14, paddingTop: 12 },
+  existingImagesHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 },
+  thumbnailRow: { gap: 9, paddingRight: 6 },
+  thumbnailCard: { width: 112, borderRadius: 8, borderWidth: 1, borderColor: "#334155", backgroundColor: "#07111f", overflow: "hidden" },
+  thumbnailImage: { width: "100%", height: 86, backgroundColor: "#020617" },
+  thumbnailName: { color: "#cbd5e1", fontSize: 11, fontWeight: "800", paddingHorizontal: 7, paddingVertical: 7 },
+  viewerScreen: { flex: 1, backgroundColor: "#020617" },
+  viewerHeader: { minHeight: 72, paddingTop: 26, paddingHorizontal: 14, paddingBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, backgroundColor: "#0b1424", borderBottomWidth: 1, borderBottomColor: "#1e293b" },
+  viewerTitle: { flex: 1, color: "#f8fafc", fontSize: 15, fontWeight: "900" },
+  viewerCloseButton: { minHeight: 38, justifyContent: "center", borderWidth: 1, borderColor: "#334155", borderRadius: 7, paddingHorizontal: 12, backgroundColor: "#101b2c" },
+  viewerCloseText: { color: "#7dd3fc", fontSize: 12, fontWeight: "900" },
+  viewerWebView: { flex: 1, backgroundColor: "#020617" },
   endorseBox: { borderTopWidth: 1, borderTopColor: "#243247", marginTop: 16, paddingTop: 13 },
   userGrid: { gap: 7 },
   userChip: { borderWidth: 1, borderColor: "#334155", backgroundColor: "#07111f", borderRadius: 7, padding: 9 },

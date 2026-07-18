@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -84,9 +85,9 @@ export default function LoginScreen({ onLogin }) {
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <View style={styles.logoMark}>
-              <Text style={styles.logoText}>NES</Text>
+              <Image source={require("../../nesfieldapp.png")} style={styles.logoImage} resizeMode="contain" />
             </View>
-            <Text style={styles.appName}>Field App</Text>
+            <Text style={styles.appName}>NES Field App</Text>
             <Text style={styles.subtitle}>Maintenance and outage work, ready for the field.</Text>
           </View>
 
@@ -155,21 +156,22 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#07111f" },
   flex: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: "center", padding: 22 },
-  hero: { marginBottom: 28 },
+  hero: { alignItems: "center", marginBottom: 28 },
   logoMark: {
     alignItems: "center",
     justifyContent: "center",
-    width: 70,
-    height: 70,
-    borderRadius: 18,
-    backgroundColor: "#0f8b4c",
+    width: 86,
+    height: 86,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.22)",
     marginBottom: 18,
+    overflow: "hidden",
   },
-  logoText: { color: "#ffffff", fontSize: 23, fontWeight: "900", letterSpacing: 0 },
-  appName: { color: "#f8fafc", fontSize: 34, fontWeight: "900", letterSpacing: 0 },
-  subtitle: { color: "#b6c2d2", fontSize: 15, lineHeight: 22, marginTop: 8, maxWidth: 310 },
+  logoImage: { width: 78, height: 78 },
+  appName: { color: "#f8fafc", fontSize: 34, fontWeight: "900", letterSpacing: 0, textAlign: "center" },
+  subtitle: { color: "#b6c2d2", fontSize: 15, lineHeight: 22, marginTop: 8, maxWidth: 310, textAlign: "center" },
   panel: { backgroundColor: "#101b2c", borderColor: "#243247", borderWidth: 1, borderRadius: 8, padding: 18 },
   panelHeader: { marginBottom: 18 },
   panelTitle: { color: "#f8fafc", fontSize: 22, fontWeight: "800", letterSpacing: 0 },

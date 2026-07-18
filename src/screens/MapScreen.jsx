@@ -1,6 +1,6 @@
 import * as Location from "expo-location";
 import { WebView } from "react-native-webview";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { getCachedGisLayersForBbox, getCachedGisLayersForCenter, getCachedMaintenanceReports, getGisLayerCacheStats } from "../services/offlineStore";
 import { syncGisLayerRows } from "../services/gisLayersService";
@@ -116,6 +116,12 @@ export default function MapScreen({ token, onOpenMaintenanceReport, onSyncStatus
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("Preparing map...");
 
+  const mapHtml = useMemo(
+    () => buildMapHtml({ center, gisLayerPayload: gisLayers, gisLayerStats: gisStats, maintenanceReports, mobileUsers }),
+    [center, gisLayers, gisStats, maintenanceReports, mobileUsers]
+  );
+  const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
+
   const refreshLocationAndUsers = useCallback(async () => {
     let nextCenter = center;
     try {
@@ -201,7 +207,7 @@ export default function MapScreen({ token, onOpenMaintenanceReport, onSyncStatus
           {syncing ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.syncText}>Sync GIS</Text>}
         </Pressable>
       </View>
-      <WebView ref={webViewRef} originWhitelist={["*"]} source={{ html: buildMapHtml({ center, gisLayerPayload: gisLayers, gisLayerStats: gisStats, maintenanceReports, mobileUsers }) }} style={styles.map} javaScriptEnabled domStorageEnabled onMessage={handleMapMessage} />
+      <WebView ref={webViewRef} originWhitelist={["*"]} source={webViewSource} style={styles.map} javaScriptEnabled domStorageEnabled onMessage={handleMapMessage} />
     </View>
   );
 }
