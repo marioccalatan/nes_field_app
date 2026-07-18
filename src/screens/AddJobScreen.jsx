@@ -556,10 +556,10 @@ function makePayload({ form, user, deviceId, localId, images, endorsedUsers }) {
     images,
     created_at: now,
   };
-  if (endorsedUsers.length > 0) {
+  if (isGisAdmin(user)) {
     payload.endorsed_to = endorsedUsers;
-    payload.endorsed_by = user?.fullname || user?.fullName || user?.username || "mobile";
-    payload.visible_on = clean(form.visibleOn);
+    payload.endorsed_by = endorsedUsers.length > 0 ? (user?.fullname || user?.fullName || user?.username || "mobile") : "";
+    payload.visible_on = endorsedUsers.length > 0 ? clean(form.visibleOn) : "";
   }
   return payload;
 }

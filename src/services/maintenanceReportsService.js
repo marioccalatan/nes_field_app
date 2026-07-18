@@ -51,7 +51,7 @@ function toFormData(payload) {
   appendFormValue(formData, "client_local_id", payload.client_local_id);
   appendFormValue(formData, "client_device_id", payload.client_device_id);
   appendFormValue(formData, "synced_at", new Date().toISOString());
-  if (Array.isArray(payload.endorsed_to) && payload.endorsed_to.length > 0) {
+  if (Object.prototype.hasOwnProperty.call(payload, "endorsed_to") && Array.isArray(payload.endorsed_to)) {
     appendFormValue(formData, "endorsed_to", JSON.stringify(payload.endorsed_to));
     appendFormValue(formData, "endorsed_by", payload.endorsed_by);
     appendFormValue(formData, "visible_on", payload.visible_on);
